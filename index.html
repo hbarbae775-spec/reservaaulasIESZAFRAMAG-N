@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reserva de aulas - IES Zaframagón</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+  :root {
+    --bg: #F2F5F6;
+    --surface: #FFFFFF;
+    --ink: #13283A;
+    --muted: #55656F;
+    --line: #D3DCE1;
+    --primary: #0F5C63;
+    --primary-ink: #FFFFFF;
+    --free: #EAF3F2;
+    --busy: #F0B24A;
+    --busy-ink: #3A2600;
+    --danger: #B3261E;
+    --ok: #17663A;
+    --focus: #1B6EF3;
+    --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+    --font-head: "Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E1920;
+      --surface: #16252F;
+      --ink: #E6EEF2;
+      --muted: #9FB1BD;
+      --line: #2B3F4C;
+      --primary: #5CC0C7;
+      --primary-ink: #04262A;
+      --free: #182F37;
+      --busy: #D9A03C;
+      --busy-ink: #1F1300;
+      --danger: #F2A29B;
+      --ok: #7ED6A0;
+      --focus: #7FB0FF;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0E1920;
+    --surface: #16252F;
+    --ink: #E6EEF2;
+    --muted: #9FB1BD;
+    --line: #2B3F4C;
+    --primary: #5CC0C7;
+    --primary-ink: #04262A;
+    --free: #182F37;
+    --busy: #D9A03C;
+    --busy-ink: #1F1300;
+    --danger: #F2A29B;
+    --ok: #7ED6A0;
+    --focus: #7FB0FF;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 1rem/1.5 var(--font-body);
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  h1, h2, h3 { font-family: var(--font-head); line-height: 1.15; margin: 0; }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.7rem); font-weight: 700; letter-spacing: -0.01em; }
+  h2 { font-size: 1.45rem; font-weight: 600; }
+  h3 { font-size: 1.05rem; font-weight: 600; text-transform: capitalize; }
+  .school { color: var(--muted); margin: 0 0 0.25rem; font-weight: 700; }
+  .lead { color: var(--muted); margin: 0.6rem 0 0; max-width: 60ch; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+  }
+  .aviso {
+    background: var(--free);
+    border-left: 4px solid var(--primary);
+    padding: 0.6rem 0.8rem;
+    border-radius: 0 6px 6px 0;
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+  }
+  .aviso.local { border-left-color: var(--busy); }
+
+  .campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; }
+  .campo { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+  .campo.ancho { grid-column: 1 / -1; }
+  label, legend { font-weight: 700; font-size: 0.95rem; }
+  input[type="text"], input[type="date"], select {
+    font: inherit;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0.6rem 0.7rem;
+    min-height: 44px;
+    width: 100%;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible, .chip input:focus-visible + span {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .chip span {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 84px; min-height: 52px; padding: 0.3rem 0.6rem;
+    border: 1.5px solid var(--line); border-radius: 8px; background: var(--bg);
+    font-weight: 700; line-height: 1.2;
+  }
+  .chip small { font-weight: 400; color: var(--muted); font-size: 0.78rem; }
+  .chip input:checked + span { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  .chip input:checked + span small { color: inherit; }
+  .chip input:disabled { cursor: not-allowed; }
+  .chip input:disabled + span { opacity: 0.5; text-decoration: line-through; background: transparent; }
+  .ayuda { color: var(--muted); font-size: 0.88rem; margin: 0.4rem 0 0; }
+
+  button {
+    font: inherit; font-weight: 700; cursor: pointer; border-radius: 8px;
+    min-height: 44px; padding: 0.6rem 1.1rem; border: 1.5px solid var(--primary);
+    background: var(--primary); color: var(--primary-ink);
+  }
+  button.sec { background: transparent; color: var(--primary); }
+  button.peligro { background: transparent; color: var(--danger); border-color: var(--danger); }
+  button:disabled { opacity: 0.6; cursor: wait; }
+  .acciones { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 1.25rem; }
+  #estado { margin: 0; font-weight: 700; min-height: 1.5em; }
+  #estado.ok { color: var(--ok); }
+  #estado.error { color: var(--danger); }
+
+  .cabecera-resumen { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+  .cabecera-resumen .campo { min-width: 200px; }
+
+  .rejilla-caja { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 720px; }
+  th, td { padding: 0; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); }
+  tr:last-child > *  { border-bottom: 0; }
+  td:last-child, th:last-child { border-right: 0; }
+  thead th { font-size: 0.85rem; padding: 0.5rem 0.4rem; text-align: center; background: var(--bg); }
+  thead th small { display: block; font-weight: 400; color: var(--muted); }
+  tbody th { text-align: left; padding: 0.5rem 0.7rem; font-size: 0.9rem; position: sticky; left: 0; background: var(--surface); min-width: 150px; z-index: 1; }
+  .recreo { width: 44px; background: var(--bg); color: var(--muted); font-size: 0.72rem; text-align: center; writing-mode: vertical-rl; transform: rotate(180deg); }
+  td.celda { height: 58px; min-width: 88px; }
+  td.celda button.libre {
+    width: 100%; height: 100%; min-height: 58px; border: 0; border-radius: 0;
+    background: var(--free); color: var(--muted); font-weight: 400; font-size: 0.82rem; padding: 0.2rem;
+  }
+  td.celda button.libre:hover { background: var(--surface); color: var(--primary); }
+  td.celda .ocupada {
+    height: 100%; min-height: 58px; padding: 0.3rem 0.4rem; background: var(--busy); color: var(--busy-ink);
+    font-size: 0.8rem; line-height: 1.2; overflow: hidden;
+  }
+  .ocupada b { display: block; }
+  td.celda .ocupada.fija {
+    background: repeating-linear-gradient(135deg, var(--line) 0 6px, var(--bg) 6px 12px);
+    color: var(--muted);
+  }
+  .leyenda { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); margin-top: 0.6rem; }
+  .leyenda i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 0.35rem; border: 1px solid var(--line); }
+
+  .lista { margin-top: 2rem; }
+  .dia { margin-top: 1.25rem; }
+  .dia h3 { border-bottom: 2px solid var(--primary); padding-bottom: 0.3rem; margin-bottom: 0.4rem; }
+  .reserva {
+    display: grid; grid-template-columns: 9.5rem 1fr auto; gap: 0.25rem 1rem; align-items: start;
+    padding: 0.7rem 0; border-bottom: 1px solid var(--line);
+  }
+  .reserva .hora { font-weight: 700; }
+  .reserva .hora small { display: block; font-weight: 400; color: var(--muted); }
+  .reserva .aula { font-weight: 700; }
+  .reserva .det { color: var(--muted); font-size: 0.92rem; }
+  .vacio { color: var(--muted); padding: 1rem 0; }
+  @media (max-width: 620px) {
+    .reserva { grid-template-columns: 1fr; }
+    .panel { padding: 1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="school">IES Zaframagón</p>
+    <h1>Reserva de aulas</h1>
+    <p class="lead">Elige aula, día y horas. Las horas ya ocupadas aparecen bloqueadas y el resumen de abajo se actualiza al instante.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="t-form">
+    <h2 id="t-form">Nueva reserva</h2>
+    <div id="aviso-local" class="aviso local" hidden>Este modo no guarda datos entre visitas: las reservas solo se ven en esta pantalla.</div>
+    <p class="ayuda" style="margin:0.4rem 0 1rem">Todos los campos son obligatorios (*).</p>
+    <form id="form" autocomplete="off">
+      <div class="campos">
+        <div class="campo">
+          <label for="profesor">Profesor/a *</label>
+          <input id="profesor" name="profesor" type="text" required maxlength="80" placeholder="Nombre y apellidos">
+        </div>
+        <div class="campo">
+          <label for="departamento">Departamento *</label>
+          <select id="departamento" name="departamento" required></select>
+        </div>
+        <div class="campo">
+          <label for="aula">Aula *</label>
+          <select id="aula" name="aula" required></select>
+        </div>
+        <div class="campo">
+          <label for="fecha">Fecha *</label>
+          <input id="fecha" name="fecha" type="date" required>
+        </div>
+        <div class="campo">
+          <label for="grupo">Grupo o curso *</label>
+          <select id="grupo" name="grupo" required></select>
+        </div>
+        <div class="campo">
+          <label for="motivo">Actividad *</label>
+          <input id="motivo" name="motivo" type="text" required maxlength="120" placeholder="Por ejemplo, prueba de Tecnología">
+        </div>
+        <fieldset class="campo ancho">
+          <legend>Horas * <span style="font-weight:400;color:var(--muted)">(puedes marcar varias)</span></legend>
+          <div class="chips" id="chips"></div>
+          <p class="ayuda" id="ayuda-horas">Elige aula y fecha para ver qué horas están libres.</p>
+        </fieldset>
+      </div>
+      <div class="acciones">
+        <button type="submit" id="enviar">Reservar aula</button>
+        <p id="estado" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="t-resumen">
+    <div class="cabecera-resumen">
+      <h2 id="t-resumen">Resumen de reservas</h2>
+      <div class="campo">
+        <label for="dia">Ocupación del día</label>
+        <input id="dia" type="date">
+      </div>
+    </div>
+    <div class="rejilla-caja"><table id="rejilla"></table></div>
+    <div class="leyenda">
+      <span><i style="background:var(--free)"></i>Libre: pulsa para elegirla en el formulario</span>
+      <span><i style="background:var(--busy)"></i>Reservada</span>
+      <span><i style="background:repeating-linear-gradient(135deg, var(--line) 0 3px, var(--bg) 3px 6px)"></i>Bloqueada (horario fijo)</span>
+    </div>
+
+    <div class="lista">
+      <div class="cabecera-resumen">
+        <h2>Próximas reservas</h2>
+        <div class="campo">
+          <label for="filtro-aula">Filtrar por aula</label>
+          <select id="filtro-aula"></select>
+        </div>
+      </div>
+      <div id="lista"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ---- Configuración: edita estas listas para adaptarlas al centro ---- */
+const AULAS = ["SUM", "Desdoble 3", "Desdoble 4", "Aula de Idiomas"];
+const GRUPOS = [
+  { curso: "1º ESO", grupos: ["A"] },
+  { curso: "2º ESO", grupos: ["A", "B"] },
+  { curso: "3º ESO", grupos: ["A", "B"] },
+  { curso: "4º ESO", grupos: ["A", "B"] },
+  { curso: "1º Bachillerato", grupos: ["A", "B", "C"] },
+  { curso: "2º Bachillerato", grupos: ["A", "B"] }
+];
+const DEPARTAMENTOS = [
+  "Inglés", "Geografía e Historia", "Física y Química", "Educación Física", "Orientación",
+  "Biología y Geología", "Lengua", "Servicios a la Comunidad", "Administración y gestión",
+  "Matemáticas", "Industria agroalimentaria", "Filosofía", "Clásicas", "Tecnología", "Francés"
+];
+const TRAMOS = [
+  { id: "t1", n: "1ª", ini: "08:15", fin: "09:15" },
+  { id: "t2", n: "2ª", ini: "09:15", fin: "10:15" },
+  { id: "t3", n: "3ª", ini: "10:15", fin: "11:15" },
+  { id: "rec", n: "Recreo", ini: "11:15", fin: "11:45", recreo: true },
+  { id: "t4", n: "4ª", ini: "11:45", fin: "12:45" },
+  { id: "t5", n: "5ª", ini: "12:45", fin: "13:45" },
+  { id: "t6", n: "6ª", ini: "13:45", fin: "14:45" }
+];
+/* Horas bloqueadas cada semana (1 = lunes ... 5 = viernes). Cada tramo puede
+   llevar quién lo tiene fijo (teacher/note); si no lleva nada, se muestra como
+   "Horario fijo" genérico. */
+const BLOQUEOS = {
+  "Desdoble 4": {
+    1: { t1: {}, t2: {}, t4: {} },
+    2: { t1: {}, t2: {}, t3: {} },
+    3: { t1: {}, t2: {}, t3: {} },
+    4: { t1: {}, t2: {}, t3: {} },
+    5: { t1: {}, t2: {}, t4: {} }
+  },
+  "Aula de Idiomas": {
+    1: { t1: { teacher: "Paqui", note: "Inglés · PDC 3º ESO" }, t5: { teacher: "Marion", note: "Francés" } },
+    2: { t2: { teacher: "Marion", note: "Francés" }, t3: { teacher: "Cristina", note: "1º Bachillerato" }, t4: { teacher: "Marion", note: "Francés" } },
+    3: { t1: { teacher: "Paqui", note: "Inglés · PDC 3º ESO" }, t2: { teacher: "Marion", note: "Francés" }, t5: { teacher: "Cristina", note: "1º Bachillerato" } },
+    4: { t2: { teacher: "Marion", note: "Francés" }, t3: { teacher: "Marion", note: "Francés" }, t5: { teacher: "Cristina", note: "1º Bachillerato" }, t6: { teacher: "Paqui", note: "Inglés · PDC 3º ESO" } },
+    5: { t2: { teacher: "Marion", note: "Francés" }, t4: { teacher: "Cristina", note: "1º Bachillerato" }, t5: { teacher: "Marion", note: "Francés" } }
+  },
+  "SUM": {
+    1: { t6: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" } },
+    2: { t3: { teacher: "Cristina", note: "1º Bachillerato" } },
+    3: { t5: { teacher: "Cristina", note: "1º Bachillerato" } },
+    4: { t3: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" }, t5: { teacher: "Cristina", note: "1º Bachillerato" } },
+    5: { t1: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" }, t4: { teacher: "Cristina", note: "1º Bachillerato" } }
+  }
+};
+/* --------------------------------------------------------------------- */
+
+const RESERVABLES = TRAMOS.filter(t => !t.recreo);
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, "0");
+const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const hoy = () => isoDate(new Date());
+const slug = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const tramoDe = id => TRAMOS.find(t => t.id === id);
+const docId = (fecha, tramo, aula) => `${fecha}_${tramo}_${slug(aula)}`;
+function fechaLarga(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+}
+function h(tag, props = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (v === true) e.setAttribute(k, "");
+    else if (v !== false && v != null) e.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) {
+    if (c == null || c === false) continue;
+    e.append(c.nodeType ? c : document.createTextNode(String(c)));
+  }
+  return e;
+}
+
+let db = null, uid = null, puedeEditarTodo = false;
+let reservas = [];
+let pendienteBorrar = null;
+const sel = new Set();
+
+/* ---------- Almacenamiento ---------- */
+async function existe(id) {
+  if (db) return (await db.doc("reservas/" + id).get()).exists;
+  return reservas.some(r => r.id === id);
+}
+async function guardar(id, data) {
+  if (db) { await db.doc("reservas/" + id).set(data); }
+  else { reservas.push({ id, ...data }); renderResumen(); refrescarChips(); }
+}
+async function borrar(id) {
+  if (db) { await db.doc("reservas/" + id).delete(); }
+  else { reservas = reservas.filter(r => r.id !== id); renderResumen(); refrescarChips(); }
+}
+
+/* ---------- Formulario ---------- */
+function montarFormulario() {
+  const dep = $("#departamento");
+  dep.append(h("option", { value: "" }, "Selecciona un departamento"));
+  DEPARTAMENTOS.forEach(d => dep.append(h("option", { value: d }, d)));
+  const aula = $("#aula");
+  aula.append(h("option", { value: "" }, "Selecciona un aula"));
+  AULAS.forEach(a => aula.append(h("option", { value: a }, a)));
+  const grupo = $("#grupo");
+  grupo.append(h("option", { value: "" }, "Selecciona un grupo"));
+  GRUPOS.forEach(c => grupo.append(h("optgroup", { label: c.curso },
+    c.grupos.map(g => h("option", { value: `${c.curso} ${g}` }, `${c.curso} ${g}`)))));
+  const filtro = $("#filtro-aula");
+  filtro.append(h("option", { value: "" }, "Todas las aulas"));
+  AULAS.forEach(a => filtro.append(h("option", { value: a }, a)));
+
+  $("#fecha").min = hoy();
+  $("#fecha").value = hoy();
+  $("#dia").value = hoy();
+
+  const chips = $("#chips");
+  RESERVABLES.forEach(t => {
+    const input = h("input", { type: "checkbox", value: t.id, "data-tramo": t.id });
+    input.addEventListener("change", () => { input.checked ? sel.add(t.id) : sel.delete(t.id); });
+    chips.append(h("label", { class: "chip" }, input, h("span", {}, t.n + " hora", h("small", {}, `${t.ini}–${t.fin}`))));
+  });
+
+  try {
+    const p = localStorage.getItem("reservas:profesor");
+    const d = localStorage.getItem("reservas:departamento");
+    if (p) $("#profesor").value = p;
+    if (d && DEPARTAMENTOS.includes(d)) dep.value = d;
+  } catch (e) { /* sin almacenamiento local */ }
+
+  $("#aula").addEventListener("change", refrescarChips);
+  $("#fecha").addEventListener("change", () => {
+    if ($("#fecha").value) $("#dia").value = $("#fecha").value;
+    refrescarChips(); renderRejilla();
+  });
+  $("#dia").addEventListener("change", renderRejilla);
+  $("#filtro-aula").addEventListener("change", renderLista);
+  $("#form").addEventListener("submit", reservar);
+}
+
+function bloqueoInfo(fecha, aula, tramo) {
+  const dias = BLOQUEOS[aula];
+  if (!dias || !fecha) return null;
+  const [y, m, d] = fecha.split("-").map(Number);
+  const dia = new Date(y, m - 1, d).getDay();
+  return (dias[dia] && dias[dia][tramo]) || null;
+}
+function bloqueoFijo(fecha, aula, tramo) {
+  return !!bloqueoInfo(fecha, aula, tramo);
+}
+
+function ocupacion(fecha, aula) {
+  const m = new Map();
+  reservas.filter(r => r.fecha === fecha && r.aula === aula).forEach(r => m.set(r.tramo, r));
+  RESERVABLES.forEach(t => {
+    const b = bloqueoInfo(fecha, aula, t.id);
+    if (b) m.set(t.id, { bloqueada: true, profesor: b.teacher || "", note: b.note || "" });
+  });
+  return m;
+}
+
+function refrescarChips() {
+  const aula = $("#aula").value, fecha = $("#fecha").value;
+  const ayuda = $("#ayuda-horas");
+  const ocup = aula && fecha ? ocupacion(fecha, aula) : new Map();
+  document.querySelectorAll("#chips input").forEach(inp => {
+    const busy = ocup.has(inp.value);
+    inp.disabled = busy;
+    if (busy) { inp.checked = false; sel.delete(inp.value); }
+    else inp.checked = sel.has(inp.value);
+    inp.title = busy ? "Ocupada" : "";
+  });
+  if (!aula || !fecha) ayuda.textContent = "Elige aula y fecha para ver qué horas están libres.";
+  else if (ocup.size === 0) ayuda.textContent = "Todas las horas están libres.";
+  else ayuda.textContent = `Horas tachadas: ocupadas o bloqueadas (${[...ocup.keys()].map(k => tramoDe(k).n).join(", ")}).`;
+}
+
+function estado(msg, tipo = "") {
+  const e = $("#estado");
+  e.textContent = msg;
+  e.className = tipo;
+}
+
+function textoHoras(ids) {
+  const orden = RESERVABLES.map(t => t.id);
+  const idx = ids.map(i => orden.indexOf(i)).sort((a, b) => a - b);
+  const partes = [];
+  let ini = 0;
+  for (let i = 1; i <= idx.length; i++) {
+    if (i === idx.length || idx[i] !== idx[i - 1] + 1) {
+      const a = RESERVABLES[idx[ini]], b = RESERVABLES[idx[i - 1]];
+      partes.push(a === b ? a.n : `${a.n}–${b.n}`);
+      ini = i;
+    }
+  }
+  return { texto: partes.join(", "), desde: RESERVABLES[idx[0]].ini, hasta: RESERVABLES[idx[idx.length - 1]].fin };
+}
+
+async function reservar(ev) {
+  ev.preventDefault();
+  const f = ev.target;
+  const datos = {
+    profesor: f.profesor.value.trim(),
+    departamento: f.departamento.value,
+    aula: f.aula.value,
+    fecha: f.fecha.value,
+    grupo: f.grupo.value.trim(),
+    motivo: f.motivo.value.trim()
+  };
+  const tramos = RESERVABLES.map(t => t.id).filter(id => sel.has(id));
+  if (!tramos.length) { estado("Elige al menos una hora.", "error"); return; }
+  if (datos.fecha < hoy()) { estado("La fecha no puede ser anterior a hoy.", "error"); return; }
+  const btn = $("#enviar");
+  btn.disabled = true;
+  estado("Guardando la reserva…");
+  try {
+    for (const t of tramos) {
+      if (bloqueoFijo(datos.fecha, datos.aula, t)) {
+        estado(`La ${tramoDe(t).n} hora de ese día está bloqueada en ${datos.aula}. Elige otra hora.`, "error");
+        return;
+      }
+      if (await existe(docId(datos.fecha, t, datos.aula))) {
+        estado(`La ${tramoDe(t).n} hora de ese día ya está reservada. Elige otra hora u otra aula.`, "error");
+        return;
+      }
+    }
+    const lote = Math.random().toString(36).slice(2, 10);
+    for (const t of tramos) {
+      await guardar(docId(datos.fecha, t, datos.aula), { ...datos, tramo: t, lote, uid, creado: Date.now() });
+    }
+    try {
+      localStorage.setItem("reservas:profesor", datos.profesor);
+      localStorage.setItem("reservas:departamento", datos.departamento);
+    } catch (e) { /* sin almacenamiento local */ }
+    estado(`Reserva guardada: ${datos.aula}, ${fechaLarga(datos.fecha)}, ${textoHoras(tramos).texto} hora.`, "ok");
+    sel.clear();
+    f.grupo.value = "";
+    f.motivo.value = "";
+    $("#dia").value = datos.fecha;
+    refrescarChips(); renderResumen();
+  } catch (e) {
+    estado("No se ha podido guardar la reserva. Inténtalo de nuevo en unos segundos.", "error");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ---------- Resumen ---------- */
+function renderRejilla() {
+  const dia = $("#dia").value || hoy();
+  const t = $("#rejilla");
+  t.replaceChildren();
+  const cab = h("tr", {}, h("th", { scope: "col", style: "text-align:left;padding-left:0.7rem" }, "Aula"));
+  TRAMOS.forEach(x => cab.append(x.recreo
+    ? h("th", { scope: "col", class: "recreo", "aria-label": "Recreo" }, "")
+    : h("th", { scope: "col" }, x.n, h("small", {}, x.ini))));
+  t.append(h("thead", {}, cab));
+  const cuerpo = h("tbody");
+  AULAS.forEach(aula => {
+    const fila = h("tr", {}, h("th", { scope: "row" }, aula));
+    const ocup = ocupacion(dia, aula);
+    TRAMOS.forEach(x => {
+      if (x.recreo) { fila.append(h("td", { class: "recreo" }, "Recreo")); return; }
+      const r = ocup.get(x.id);
+      if (r && r.bloqueada) {
+        const detalleFijo = r.profesor ? `${r.profesor}${r.note ? " · " + r.note : ""}` : "Horario fijo del aula";
+        fila.append(h("td", { class: "celda" },
+          h("div", { class: "ocupada fija", title: `Horario fijo: ${detalleFijo}` },
+            h("b", {}, r.profesor || "Bloqueada"), r.note || (r.profesor ? "" : "Horario fijo"))));
+      } else if (r) {
+        fila.append(h("td", { class: "celda" },
+          h("div", { class: "ocupada", title: `${r.profesor} (${r.departamento}) · ${r.grupo} · ${r.motivo}` },
+            h("b", {}, r.grupo), r.profesor)));
+      } else {
+        fila.append(h("td", { class: "celda" },
+          h("button", {
+            type: "button", class: "libre",
+            "aria-label": `Reservar ${aula}, ${x.n} hora, ${fechaLarga(dia)}`,
+            onclick: () => elegirHueco(aula, dia, x.id)
+          }, "Libre")));
+      }
+    });
+    cuerpo.append(fila);
+  });
+  t.append(cuerpo);
+}
+
+function elegirHueco(aula, dia, tramo) {
+  if (dia < hoy()) { estado("No se pueden hacer reservas en días pasados.", "error"); $("#form").scrollIntoView({ block: "start" }); return; }
+  $("#aula").value = aula;
+  $("#fecha").value = dia;
+  if (!sel.has(tramo)) sel.add(tramo);
+  refrescarChips();
+  $("#form").scrollIntoView({ block: "start" });
+  (($("#profesor").value ? $("#grupo") : $("#profesor"))).focus({ preventScroll: true });
+}
+
+function agrupar(lista) {
+  const m = new Map();
+  lista.forEach(r => {
+    const k = r.lote || r.id;
+    if (!m.has(k)) m.set(k, { key: k, ...r, tramos: [], ids: [] });
+    const g = m.get(k);
+    g.tramos.push(r.tramo);
+    g.ids.push(r.id);
+  });
+  return [...m.values()];
+}
+
+function puedeBorrar(g) {
+  return !db || puedeEditarTodo || (g.uid && g.uid === uid);
+}
+
+function renderLista() {
+  const cont = $("#lista");
+  cont.replaceChildren();
+  const filtro = $("#filtro-aula").value;
+  const futuras = reservas.filter(r => r.fecha >= hoy() && (!filtro || r.aula === filtro));
+  const grupos = agrupar(futuras).map(g => ({ ...g, h: textoHoras(g.tramos) }));
+  if (!grupos.length) {
+    cont.append(h("p", { class: "vacio" }, filtro ? "No hay reservas próximas en esta aula." : "Todavía no hay reservas próximas. Cuando alguien reserve un aula, aparecerá aquí."));
+    return;
+  }
+  grupos.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.h.desde.localeCompare(b.h.desde) || a.aula.localeCompare(b.aula));
+  const porDia = new Map();
+  grupos.forEach(g => { if (!porDia.has(g.fecha)) porDia.set(g.fecha, []); porDia.get(g.fecha).push(g); });
+  porDia.forEach((gs, fecha) => {
+    const dia = h("section", { class: "dia" }, h("h3", {}, fechaLarga(fecha)));
+    gs.forEach(g => {
+      const confirmando = pendienteBorrar === g.key;
+      const acciones = !puedeBorrar(g) ? h("span") : confirmando
+        ? h("div", { style: "display:flex;gap:0.5rem;flex-wrap:wrap" },
+            h("button", { type: "button", class: "peligro", onclick: () => cancelar(g) }, "Confirmar cancelación"),
+            h("button", { type: "button", class: "sec", onclick: () => { pendienteBorrar = null; renderLista(); } }, "Volver"))
+        : h("button", { type: "button", class: "sec", onclick: () => { pendienteBorrar = g.key; renderLista(); } }, "Cancelar reserva");
+      dia.append(h("div", { class: "reserva" },
+        h("div", { class: "hora" }, `${g.h.texto} hora`, h("small", {}, `${g.h.desde}–${g.h.hasta}`)),
+        h("div", {},
+          h("div", { class: "aula" }, g.aula),
+          h("div", { class: "det" }, `${g.grupo} · ${g.motivo}`),
+          h("div", { class: "det" }, `${g.profesor} (${g.departamento})`)),
+        acciones));
+    });
+    cont.append(dia);
+  });
+}
+
+async function cancelar(g) {
+  try {
+    for (const id of g.ids) await borrar(id);
+    pendienteBorrar = null;
+    estado("Reserva cancelada.", "ok");
+  } catch (e) {
+    estado("No se ha podido cancelar la reserva. Inténtalo de nuevo.", "error");
+  }
+  renderLista();
+}
+
+function renderResumen() { renderRejilla(); renderLista(); }
+
+/* ---------- Arranque ---------- */
+montarFormulario();
+renderResumen();
+refrescarChips();
+
+(async () => {
+  try {
+    db = (typeof claude !== "undefined") ? await claude.use("db") : null;
+  } catch (e) { db = null; }
+  if (!db) { $("#aviso-local").hidden = false; return; }
+  try {
+    const user = await claude.use("user");
+    if (user) { uid = await user.id(); puedeEditarTodo = await user.canEdit(); }
+  } catch (e) { /* sin identidad: no se podrán cancelar reservas propias */ }
+  db.collection("reservas").where("fecha", ">=", hoy()).orderBy("fecha").limit(1000).onSnapshot(
+    snap => {
+      reservas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderResumen();
+      refrescarChips();
+    },
+    () => estado("Se ha perdido la conexión con las reservas. Recarga la página.", "error")
+  );
+})();
+</script>
+</body>
+</html>
