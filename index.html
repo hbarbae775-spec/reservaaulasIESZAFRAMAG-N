@@ -198,7 +198,7 @@
 
   <section class="panel" aria-labelledby="t-form">
     <h2 id="t-form">Nueva reserva</h2>
-    <div id="aviso-local" class="aviso local" hidden>Este modo no guarda datos entre visitas: las reservas solo se ven en esta pantalla.</div>
+    <div id="aviso-local" class="aviso local" hidden></div>
     <p class="ayuda" style="margin:0.4rem 0 1rem">Todos los campos son obligatorios (*).</p>
     <form id="form" autocomplete="off">
       <div class="campos">
@@ -246,6 +246,7 @@
         <label for="dia">Ocupación del día</label>
         <input id="dia" type="date">
       </div>
+      <button type="button" class="sec" id="actualizar" style="align-self:end">Actualizar</button>
     </div>
     <div class="rejilla-caja"><table id="rejilla"></table></div>
     <div class="leyenda">
@@ -320,6 +321,11 @@ const BLOQUEOS = {
 };
 /* --------------------------------------------------------------------- */
 
+/* Pega aquí la URL de tu implementación de Apps Script (termina en /exec).
+   Instrucciones en LEEME.md. Mientras esté vacía, la app funciona en modo
+   "solo en este navegador", sin compartir reservas con nadie más. */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJ0qhhSQbaN6S2e-8ixWp55qdwYa0qrohzWHc4iLDkFmyN5Fdzp5JqBIj15z_R05HPig/exec";
+
 const RESERVABLES = TRAMOS.filter(t => !t.recreo);
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, "0");
@@ -347,23 +353,44 @@ function h(tag, props = {}, ...kids) {
   return e;
 }
 
-let db = null, uid = null, puedeEditarTodo = false;
+const CONECTADO = !!APPS_SCRIPT_URL;
 let reservas = [];
 let pendienteBorrar = null;
 const sel = new Set();
 
-/* ---------- Almacenamiento ---------- */
-async function existe(id) {
-  if (db) return (await db.doc("reservas/" + id).get()).exists;
-  return reservas.some(r => r.id === id);
+/* ---------- Almacenamiento: Google Sheets vía Apps Script ----------
+ * Sin backend configurado, cae a un modo "solo en este navegador" (igual
+ * que antes) para poder seguir probando la interfaz sin desplegar nada. */
+async function llamarBackend(params) {
+  const url = APPS_SCRIPT_URL + '?' + new URLSearchParams(params).toString();
+  const res = await fetch(url);
+  return res.json();
 }
-async function guardar(id, data) {
-  if (db) { await db.doc("reservas/" + id).set(data); }
-  else { reservas.push({ id, ...data }); renderResumen(); refrescarChips(); }
+async function enviarBackend(accion, datos) {
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight CORS con Apps Script
+    body: JSON.stringify({ action: accion, ...datos })
+  });
+  return res.json();
 }
-async function borrar(id) {
-  if (db) { await db.doc("reservas/" + id).delete(); }
-  else { reservas = reservas.filter(r => r.id !== id); renderResumen(); refrescarChips(); }
+
+function avisar(msg) {
+  const el = $("#aviso-local");
+  el.textContent = msg;
+  el.hidden = false;
+}
+async function cargarReservas() {
+  if (!CONECTADO) return;
+  try {
+    const r = await llamarBackend({ action: 'lista', desde: hoy() });
+    if (r.ok) { reservas = r.reservas; $("#aviso-local").hidden = true; }
+    else avisar("No se ha podido cargar el registro de reservas: " + (r.error || "error desconocido") + ".");
+  } catch (e) {
+    avisar("No se ha podido conectar con el registro compartido de reservas. Comprueba tu conexión y recarga la página.");
+  }
+  renderResumen();
+  refrescarChips();
 }
 
 /* ---------- Formulario ---------- */
@@ -482,23 +509,28 @@ async function reservar(ev) {
   const tramos = RESERVABLES.map(t => t.id).filter(id => sel.has(id));
   if (!tramos.length) { estado("Elige al menos una hora.", "error"); return; }
   if (datos.fecha < hoy()) { estado("La fecha no puede ser anterior a hoy.", "error"); return; }
+  for (const t of tramos) {
+    if (bloqueoFijo(datos.fecha, datos.aula, t)) {
+      estado(`La ${tramoDe(t).n} hora de ese día está bloqueada en ${datos.aula}. Elige otra hora.`, "error");
+      return;
+    }
+  }
   const btn = $("#enviar");
   btn.disabled = true;
   estado("Guardando la reserva…");
   try {
-    for (const t of tramos) {
-      if (bloqueoFijo(datos.fecha, datos.aula, t)) {
-        estado(`La ${tramoDe(t).n} hora de ese día está bloqueada en ${datos.aula}. Elige otra hora.`, "error");
+    if (CONECTADO) {
+      const r = await enviarBackend('reservar', { fecha: datos.fecha, aula: datos.aula, tramos, ...datos });
+      if (!r.ok) {
+        estado(r.error === 'Alguna de esas horas ya está reservada.'
+          ? `Alguien se ha adelantado: ${(r.ocupadas || []).map(t => tramoDe(t).n).join(", ")} ya está reservada. Elige otra hora.`
+          : (r.error || "No se ha podido guardar la reserva."), "error");
+        await cargarReservas();
         return;
       }
-      if (await existe(docId(datos.fecha, t, datos.aula))) {
-        estado(`La ${tramoDe(t).n} hora de ese día ya está reservada. Elige otra hora u otra aula.`, "error");
-        return;
-      }
-    }
-    const lote = Math.random().toString(36).slice(2, 10);
-    for (const t of tramos) {
-      await guardar(docId(datos.fecha, t, datos.aula), { ...datos, tramo: t, lote, uid, creado: Date.now() });
+    } else {
+      const lote = Math.random().toString(36).slice(2, 10);
+      tramos.forEach(t => reservas.push({ id: docId(datos.fecha, t, datos.aula), ...datos, tramo: t, lote, creado: Date.now() }));
     }
     try {
       localStorage.setItem("reservas:profesor", datos.profesor);
@@ -509,7 +541,7 @@ async function reservar(ev) {
     f.grupo.value = "";
     f.motivo.value = "";
     $("#dia").value = datos.fecha;
-    refrescarChips(); renderResumen();
+    if (CONECTADO) await cargarReservas(); else { refrescarChips(); renderResumen(); }
   } catch (e) {
     estado("No se ha podido guardar la reserva. Inténtalo de nuevo en unos segundos.", "error");
   } finally {
@@ -580,7 +612,7 @@ function agrupar(lista) {
 }
 
 function puedeBorrar(g) {
-  return !db || puedeEditarTodo || (g.uid && g.uid === uid);
+  return true; // sin cuentas de usuario: cualquiera puede liberar, pero queda registrado quién lo hizo
 }
 
 function renderLista() {
@@ -618,8 +650,17 @@ function renderLista() {
 }
 
 async function cancelar(g) {
+  const liberadoPor = ($("#profesor").value || "").trim() || prompt("¿Quién libera esta reserva? (para el registro)", "") || "";
+  if (!liberadoPor.trim()) { estado("Necesito un nombre para liberar la reserva (queda registrado).", "error"); return; }
   try {
-    for (const id of g.ids) await borrar(id);
+    if (CONECTADO) {
+      const r = await enviarBackend('liberar', { ids: g.ids, liberadoPor: liberadoPor.trim() });
+      if (!r.ok) { estado(r.error || "No se ha podido cancelar la reserva.", "error"); await cargarReservas(); return; }
+      await cargarReservas();
+    } else {
+      reservas = reservas.filter(r => !g.ids.includes(r.id));
+      renderResumen(); refrescarChips();
+    }
     pendienteBorrar = null;
     estado("Reserva cancelada.", "ok");
   } catch (e) {
@@ -635,24 +676,16 @@ montarFormulario();
 renderResumen();
 refrescarChips();
 
-(async () => {
-  try {
-    db = (typeof claude !== "undefined") ? await claude.use("db") : null;
-  } catch (e) { db = null; }
-  if (!db) { $("#aviso-local").hidden = false; return; }
-  try {
-    const user = await claude.use("user");
-    if (user) { uid = await user.id(); puedeEditarTodo = await user.canEdit(); }
-  } catch (e) { /* sin identidad: no se podrán cancelar reservas propias */ }
-  db.collection("reservas").where("fecha", ">=", hoy()).orderBy("fecha").limit(1000).onSnapshot(
-    snap => {
-      reservas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderResumen();
-      refrescarChips();
-    },
-    () => estado("Se ha perdido la conexión con las reservas. Recarga la página.", "error")
-  );
-})();
+$("#actualizar").addEventListener("click", () => { if (CONECTADO) cargarReservas(); });
+
+if (CONECTADO) {
+  cargarReservas();
+  // Sondeo periódico: Apps Script no tiene tiempo real, así que refrescamos
+  // solas cada 20 segundos para que se note cuando otra persona reserva o libera.
+  setInterval(cargarReservas, 20000);
+} else {
+  avisar("Backend no configurado (APPS_SCRIPT_URL vacía): modo de prueba, las reservas solo se ven en este navegador.");
+}
 </script>
 </body>
 </html>
