@@ -270,7 +270,7 @@
 
 <script>
 /* ---- Configuración: edita estas listas para adaptarlas al centro ---- */
-const AULAS = ["SUM", "Desdoble 3", "Desdoble 4", "Aula de Idiomas"];
+const AULAS = ["SUM", "Desdoble 3", "Informática 3 2ª planta", "Aula de Idiomas"];
 const GRUPOS = [
   { curso: "1º ESO", grupos: ["A"] },
   { curso: "2º ESO", grupos: ["A", "B"] },
@@ -297,13 +297,6 @@ const TRAMOS = [
    llevar quién lo tiene fijo (teacher/note); si no lleva nada, se muestra como
    "Horario fijo" genérico. */
 const BLOQUEOS = {
-  "Desdoble 4": {
-    1: { t1: {}, t2: {}, t4: {} },
-    2: { t1: {}, t2: {}, t3: {} },
-    3: { t1: {}, t2: {}, t3: {} },
-    4: { t1: {}, t2: {}, t3: {} },
-    5: { t1: {}, t2: {}, t4: {} }
-  },
   "Aula de Idiomas": {
     1: { t1: { teacher: "Paqui", note: "Inglés · PDC 3º ESO" }, t5: { teacher: "Marion", note: "Francés" } },
     2: { t2: { teacher: "Marion", note: "Francés" }, t3: { teacher: "Cristina", note: "1º Bachillerato" }, t4: { teacher: "Marion", note: "Francés" } },
@@ -421,9 +414,7 @@ function montarFormulario() {
   });
 
   try {
-    const p = localStorage.getItem("reservas:profesor");
     const d = localStorage.getItem("reservas:departamento");
-    if (p) $("#profesor").value = p;
     if (d && DEPARTAMENTOS.includes(d)) dep.value = d;
   } catch (e) { /* sin almacenamiento local */ }
 
@@ -533,7 +524,6 @@ async function reservar(ev) {
       tramos.forEach(t => reservas.push({ id: docId(datos.fecha, t, datos.aula), ...datos, tramo: t, lote, creado: Date.now() }));
     }
     try {
-      localStorage.setItem("reservas:profesor", datos.profesor);
       localStorage.setItem("reservas:departamento", datos.departamento);
     } catch (e) { /* sin almacenamiento local */ }
     estado(`Reserva guardada: ${datos.aula}, ${fechaLarga(datos.fecha)}, ${textoHoras(tramos).texto} hora.`, "ok");
