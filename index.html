@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -306,10 +307,18 @@ const BLOQUEOS = {
   },
   "SUM": {
     1: { t6: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" } },
-    2: { t3: { teacher: "Cristina", note: "1º Bachillerato" } },
-    3: { t5: { teacher: "Cristina", note: "1º Bachillerato" } },
-    4: { t3: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" }, t5: { teacher: "Cristina", note: "1º Bachillerato" } },
-    5: { t1: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" }, t4: { teacher: "Cristina", note: "1º Bachillerato" } }
+    4: { t3: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" } },
+    5: { t1: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" } }
+  },
+  "Desdoble 3": {
+    2: { t1: { teacher: "Ángeles", note: "Patrimonio" } },
+    3: { t3: { teacher: "Ángeles", note: "Patrimonio" } }
+  },
+  "Informática 3 2ª planta": {
+    1: { t2: { teacher: "Chema", note: "Diver" }, t3: { teacher: "Chema", note: "Diver" } },
+    2: { t1: { teacher: "Chema", note: "Diver" }, t2: { teacher: "Chema", note: "Diver" } },
+    4: { t4: { teacher: "Chema", note: "Diver" } },
+    5: { t4: { teacher: "Chema", note: "Diver" } }
   }
 };
 /* --------------------------------------------------------------------- */
@@ -317,7 +326,7 @@ const BLOQUEOS = {
 /* Pega aquí la URL de tu implementación de Apps Script (termina en /exec).
    Instrucciones en LEEME.md. Mientras esté vacía, la app funciona en modo
    "solo en este navegador", sin compartir reservas con nadie más. */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJ0qhhSQbaN6S2e-8ixWp55qdwYa0qrohzWHc4iLDkFmyN5Fdzp5JqBIj15z_R05HPig/exec";
+const APPS_SCRIPT_URL = "";
 
 const RESERVABLES = TRAMOS.filter(t => !t.recreo);
 const $ = s => document.querySelector(s);
