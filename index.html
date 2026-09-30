@@ -332,6 +332,12 @@ const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, "0");
 const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const hoy = () => isoDate(new Date());
+const LIMITE_MESES_VISTA = 2;
+const limiteReserva = () => {
+  const d = new Date();
+  d.setMonth(d.getMonth() + LIMITE_MESES_VISTA);
+  return isoDate(d);
+};
 const slug = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const tramoDe = id => TRAMOS.find(t => t.id === id);
 const docId = (fecha, tramo, aula) => `${fecha}_${tramo}_${slug(aula)}`;
@@ -411,6 +417,7 @@ function montarFormulario() {
   AULAS.forEach(a => filtro.append(h("option", { value: a }, a)));
 
   $("#fecha").min = hoy();
+  $("#fecha").max = limiteReserva();
   $("#fecha").value = hoy();
   $("#dia").value = hoy();
 
@@ -508,6 +515,7 @@ async function reservar(ev) {
   const tramos = RESERVABLES.map(t => t.id).filter(id => sel.has(id));
   if (!tramos.length) { estado("Elige al menos una hora.", "error"); return; }
   if (datos.fecha < hoy()) { estado("La fecha no puede ser anterior a hoy.", "error"); return; }
+  if (datos.fecha > limiteReserva()) { estado(`Solo se pueden reservar aulas hasta ${LIMITE_MESES_VISTA} meses vista (hasta el ${fechaLarga(limiteReserva())}).`, "error"); return; }
   for (const t of tramos) {
     if (bloqueoFijo(datos.fecha, datos.aula, t)) {
       estado(`La ${tramoDe(t).n} hora de ese día está bloqueada en ${datos.aula}. Elige otra hora.`, "error");
