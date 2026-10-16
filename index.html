@@ -277,7 +277,9 @@ const GRUPOS = [
   { curso: "3º ESO", grupos: ["A", "B"] },
   { curso: "4º ESO", grupos: ["A", "B"] },
   { curso: "1º Bachillerato", grupos: ["A", "B", "C"] },
-  { curso: "2º Bachillerato", grupos: ["A", "B"] }
+  { curso: "2º Bachillerato", grupos: ["A", "B"] },
+  { curso: "1º Administrativo", grupos: [""] },
+  { curso: "2º Administrativo", grupos: [""] }
 ];
 const DEPARTAMENTOS = [
   "Inglés", "Geografía e Historia", "Física y Química", "Educación Física", "Orientación",
@@ -306,8 +308,10 @@ const BLOQUEOS = {
   },
   "SUM": {
     1: { t6: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" } },
-    4: { t3: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" } },
-    5: { t1: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" } }
+    2: { t3: { teacher: "Marta", note: "Inglés" } },
+    3: { t5: { teacher: "Marta", note: "Inglés" } },
+    4: { t3: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" }, t5: { teacher: "Marta", note: "Inglés" } },
+    5: { t1: { teacher: "Lengua y Literatura", note: "2º Bachillerato B" }, t4: { teacher: "Marta", note: "Inglés" } }
   },
   "Desdoble 3": {
     2: { t1: { teacher: "Ángeles", note: "Patrimonio" } },
@@ -411,7 +415,7 @@ function montarFormulario() {
   const grupo = $("#grupo");
   grupo.append(h("option", { value: "" }, "Selecciona un grupo"));
   GRUPOS.forEach(c => grupo.append(h("optgroup", { label: c.curso },
-    c.grupos.map(g => h("option", { value: `${c.curso} ${g}` }, `${c.curso} ${g}`)))));
+    c.grupos.map(g => { const n = g ? `${c.curso} ${g}` : c.curso; return h("option", { value: n }, n); }))));
   const filtro = $("#filtro-aula");
   filtro.append(h("option", { value: "" }, "Todas las aulas"));
   AULAS.forEach(a => filtro.append(h("option", { value: a }, a)));
